@@ -1,12 +1,15 @@
 import { Injectable } from '@nestjs/common';
-import { BookDTO } from './book.dto';
-import { PrismaService } from 'src/database/prisma.service';
+import { PrismaService } from '../prisma.service';
+import { BookRepository } from 'src/application/repositories/book-repository';
+import { Book } from 'src/application/entities/book';
+import { PrismaBookMapper } from '../mappers/prisma-book-mapper';
 
 @Injectable()
-export class BookService {
+export class PrismaBookRepository implements BookRepository {
   constructor(private prisma: PrismaService) {}
 
-  async create(data: BookDTO) {
+  async createBook(data: Book): Promise<void> {
+    const raw = PrismaBookMapper.toDomain(data);
     const bookExists = await this.prisma.book.findFirst({
       where: {
         bar_code: data.bar_code,
@@ -16,18 +19,17 @@ export class BookService {
     if (bookExists) {
       throw new Error(`Book already exists`);
     }
-    const book = await this.prisma.book.create({
-      data,
+    await this.prisma.book.create({
+      data: raw,
     });
-
-    return book;
   }
 
-  async findAll() {
-    return this.prisma.book.findMany();
+  async getBook(): Promise<Book[]> {
+    const books = await this.prisma.book.findMany();
+    return books.map(PrismaBookMapper.toFetchAll);
   }
 
-  async update(id: string, data: BookDTO) {
+  async updateBook(id: string, data: Book): Promise<void> {
     const bookExists = await this.prisma.book.findUnique({
       where: {
         id,
@@ -37,16 +39,18 @@ export class BookService {
     if (!bookExists) {
       throw new Error('Book does not exists!');
     }
+
+    const raw = PrismaBookMapper.toDomain(data);
 
     await this.prisma.book.update({
-      data,
+      data: raw,
       where: {
         id,
       },
     });
   }
 
-  async delete(id: string) {
+  async deleteBook(id: string): Promise<void> {
     const bookExists = await this.prisma.book.findUnique({
       where: {
         id,
@@ -57,7 +61,7 @@ export class BookService {
       throw new Error('Book does not exists!');
     }
 
-    return await this.prisma.book.delete({
+    await this.prisma.book.delete({
       where: {
         id,
       },

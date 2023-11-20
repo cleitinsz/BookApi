@@ -1,9 +1,8 @@
 import { Module } from '@nestjs/common';
-import { BookModule } from './modules/book/book.module';
+import { HttpModule } from './infra/http/http.module';
+import { DatabaseModule } from './infra/database/database.module';
 
 @Module({
-  imports: [BookModule],
-  controllers: [],
-  providers: [],
+  imports: [HttpModule, DatabaseModule],
 })
 export class AppModule {}
